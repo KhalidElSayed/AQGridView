@@ -641,8 +641,9 @@ NSString * const AQGridViewSelectionDidChangeNotification = @"AQGridViewSelectio
 	}
 	
 	CGRect rect = CGRectZero;
-	rect.size.width = self.bounds.size.width;
+	rect.size.width = self.contentSize.width - (_gridData.leftPadding + _gridData.rightPadding);
 	rect.size.height = self.contentSize.height -  (_gridData.topPadding + _gridData.bottomPadding);
+	rect.origin.x += _gridData.leftPadding;
 	rect.origin.y += _gridData.topPadding;
 	self.backgroundView.frame = rect;
 	
