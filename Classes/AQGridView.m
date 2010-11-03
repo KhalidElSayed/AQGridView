@@ -94,7 +94,11 @@ NSString * const AQGridViewSelectionDidChangeNotification = @"AQGridViewSelectio
 	_pendingSelectionIndex = NSNotFound;
 	
 	_flags.resizesCellWidths = 0;
-	_flags.numColumns = [_gridData numberOfItemsPerRow];
+	if (_gridData.layoutDirection == AQGridViewLayoutDirectionVertical) {
+		_flags.numColumns = [_gridData numberOfItemsPerRow];
+	} else {
+		_flags.numRows = [_gridData numberofItemsPerColumn];
+	}
 	_flags.separatorStyle = AQGridViewCellSeparatorStyleEmptySpace;
 	_flags.allowsSelection = 1;
 	_flags.usesPagedHorizontalScrolling = NO;
@@ -200,14 +204,24 @@ NSString * const AQGridViewSelectionDidChangeNotification = @"AQGridViewSelectio
 
 - (NSUInteger) numberOfColumns
 {
-	if ( _flags.numColumns == 0 )
-		_flags.numColumns = 1;
-	return ( _flags.numColumns );
+	if (_gridData.layoutDirection == AQGridViewLayoutDirectionVertical) {
+		if ( _flags.numColumns == 0 )
+			_flags.numColumns = 1;
+		return ( _flags.numColumns );
+	} else {
+		return ( _gridData.numberOfItems / _flags.numRows );
+	}
 }
 
 - (NSUInteger) numberOfRows
 {
-	return ( _gridData.numberOfItems / _flags.numColumns );
+	if (_gridData.layoutDirection == AQGridViewLayoutDirectionVertical) {
+		return ( _gridData.numberOfItems / _flags.numColumns );
+	} else {
+		if ( _flags.numRows == 0 )
+			_flags.numRows = 1;
+		return ( _flags.numRows );
+	}
 }
 
 - (BOOL) allowsSelection
@@ -436,7 +450,14 @@ NSString * const AQGridViewSelectionDidChangeNotification = @"AQGridViewSelectio
 	BOOL wasAtBottom = ((oldGridSize.height != 0.0) && (CGRectGetMaxY(oldBounds) == oldGridSize.height));
 	
 	[_gridData gridViewDidChangeBoundsSize: bounds.size];
-    _flags.numColumns = [_gridData numberOfItemsPerRow];
+	
+	if (_gridData.layoutDirection == AQGridViewLayoutDirectionVertical) {
+		_flags.numColumns = [_gridData numberOfItemsPerRow];
+	} else {
+		_flags.numRows = [_gridData numberofItemsPerColumn];
+	}
+
+	
 	CGSize newGridSize = [_gridData sizeForEntireGrid];
 	
 	CGPoint oldMaxLocation = CGPointMake(CGRectGetMaxX(oldBounds), CGRectGetMaxY(oldBounds));
@@ -483,11 +504,11 @@ NSString * const AQGridViewSelectionDidChangeNotification = @"AQGridViewSelectio
 	if ( (_flags.contentSizeFillsBounds == 1) && (newSize.height < self.bounds.size.height) )
 		newSize.height = self.bounds.size.height;
 	
-	CGSize oldSize = self.contentSize;
+	//CGSize oldSize = self.contentSize;
 	[super setContentSize: newSize];
 	
-	if ( oldSize.width != newSize.width )
-		[_gridData gridViewDidChangeBoundsSize: newSize];
+	//if ( oldSize.width != newSize.width )
+	//	[_gridData gridViewDidChangeBoundsSize: newSize];
 	
 	if ( CGRectGetMaxY(self.bounds) > newSize.height )
 	{
@@ -571,7 +592,11 @@ NSString * const AQGridViewSelectionDidChangeNotification = @"AQGridViewSelectio
 	if ( _flags.dataSourceGridCellSize == 1 )
 	{
 		[_gridData setDesiredCellSize: [_dataSource portraitGridCellSizeForGridView: self]];
-		_flags.numColumns = [_gridData numberOfItemsPerRow];
+		if (_gridData.layoutDirection == AQGridViewLayoutDirectionVertical) {
+			_flags.numColumns = [_gridData numberOfItemsPerRow];
+		} else {
+			_flags.numRows = [_gridData numberofItemsPerColumn];
+		}
 	}
 	
 	_gridData.numberOfItems = [_dataSource numberOfItemsInGridView: self];

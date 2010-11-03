@@ -79,7 +79,8 @@
 // metrics used within the scroll view
 - (CGRect) rectForEntireGrid;
 - (CGSize) sizeForEntireGrid;
-- (NSUInteger) numberOfItemsPerRow;
+- (NSUInteger) numberOfItemsPerRow; // when in AQGridViewLayoutDirectionVertical
+- (NSUInteger) numberofItemsPerColumn; // when in AQGridViewLayoutDirectionHorizontal
 
 - (CGRect) cellRectAtIndex: (NSUInteger) index;
 - (CGRect) cellRectForPoint: (CGPoint) point;

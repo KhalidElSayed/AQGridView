@@ -125,7 +125,8 @@ extern NSString * const AQGridViewSelectionDidChangeNotification;
 	struct
 	{
 		unsigned	resizesCellWidths:1;
-		unsigned	numColumns:6;
+		unsigned	numColumns:6; // when AQGridViewLayoutDirectionVertical
+		unsigned	numRows:6; // when AQGridViewLayoutDirectionHorizontal
 		unsigned	separatorStyle:3;
 		unsigned	allowsSelection:1;
 		unsigned	usesPagedHorizontalScrolling:1;

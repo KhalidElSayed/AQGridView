@@ -38,7 +38,7 @@
 #import "AQGridView.h"
 
 @interface AQGridViewData (AQGridViewDataPrivate)
-- (void) fixDesiredCellSizeForWidth: (CGFloat) width;
+- (void)fixDesiredCellSize;
 @end
 
 @implementation AQGridViewData
@@ -80,8 +80,7 @@
 - (void) gridViewDidChangeBoundsSize: (CGSize) boundsSize
 {
 	_boundsSize = boundsSize;
-	if ( _layoutDirection == AQGridViewLayoutDirectionVertical )
-		[self fixDesiredCellSizeForWidth: boundsSize.width];
+	[self fixDesiredCellSize];
 }
 
 - (NSUInteger) itemIndexForPoint: (CGPoint) point
@@ -98,7 +97,12 @@
 	NSUInteger x = (NSUInteger)floorf(point.x);
 	NSUInteger col = x / (NSUInteger)_actualCellSize.width;
 	
-	NSUInteger result = (row * [self numberOfItemsPerRow]) + col;
+	NSUInteger result;
+	if (_layoutDirection == AQGridViewLayoutDirectionVertical) 
+		result = (row * [self numberOfItemsPerRow]) + col;
+	else 
+		result = (col * [self numberofItemsPerColumn]) + row;
+	 
 	if ( result >= self.numberOfItems )
 		result = NSNotFound;
 	
@@ -123,19 +127,13 @@
 - (void) setDesiredCellSize: (CGSize) desiredCellSize
 {
 	_desiredCellSize = desiredCellSize;
-	if ( _layoutDirection == AQGridViewLayoutDirectionVertical )
-		[self fixDesiredCellSizeForWidth: _boundsSize.width];
-	else
-		_actualCellSize = _desiredCellSize;
+	[self fixDesiredCellSize];
 }
 
 - (void) setLayoutDirection: (AQGridViewLayoutDirection) direction
 {
-	if ( direction == AQGridViewLayoutDirectionVertical )
-		[self fixDesiredCellSizeForWidth: _boundsSize.width];
-	else
-		_actualCellSize = _desiredCellSize;
 	_layoutDirection = direction;
+	[self fixDesiredCellSize];
 }
 
 - (CGSize) cellSize
@@ -154,41 +152,72 @@
 
 - (CGSize) sizeForEntireGrid
 {
-	NSUInteger numPerRow = [self numberOfItemsPerRow];
-    if ( numPerRow == 0 )       // avoid a divide-by-zero exception
-        return ( CGSizeZero );
-	NSUInteger numRows = _numberOfItems / numPerRow;
-	if ( _numberOfItems % numPerRow != 0 )
-		numRows++;
+	if (_layoutDirection == AQGridViewLayoutDirectionVertical ) 
+	{
+		NSUInteger numPerRow = [self numberOfItemsPerRow];
+		if ( numPerRow == 0 )       // avoid a divide-by-zero exception
+			return ( CGSizeZero );
+		NSUInteger numRows = _numberOfItems / numPerRow;
+		if ( _numberOfItems % numPerRow != 0 )
+			numRows++;
+		
+		CGFloat height = ( ((CGFloat)ceilf((CGFloat)numRows * _actualCellSize.height)) + _topPadding + _bottomPadding );
+		if (height < _gridView.bounds.size.height)
+			height = _gridView.bounds.size.height;
+		
+		return ( CGSizeMake(((CGFloat)ceilf(_actualCellSize.width * numPerRow)) + _leftPadding + _rightPadding, height) );
+	} 
+	else 
+	{
+		NSUInteger numPerCol = [self numberofItemsPerColumn];
+		if ( numPerCol == 0 )       // avoid a divide-by-zero exception
+			return ( CGSizeZero );
+		NSUInteger numCols = _numberOfItems / numPerCol;
+		if ( _numberOfItems % numPerCol != 0 )
+			numCols++;
+		
+		CGFloat width = ( ((CGFloat)ceilf((CGFloat)numCols * _actualCellSize.width)) + _leftPadding + _rightPadding);
+		if (width < _gridView.bounds.size.width)
+			width = _gridView.bounds.size.width;
+		
+		return ( CGSizeMake(width, ((CGFloat)ceilf(_actualCellSize.height * numPerCol)) + _topPadding + _bottomPadding) );
+	}
+
 	
-	CGFloat height = ( ((CGFloat)ceilf((CGFloat)numRows * _actualCellSize.height)) + _topPadding + _bottomPadding );
-	if (height < _gridView.bounds.size.height)
-		height = _gridView.bounds.size.height;
-	
-	return ( CGSizeMake(((CGFloat)ceilf(_actualCellSize.width * numPerRow)) + _leftPadding + _rightPadding, height) );
 }
 
 - (NSUInteger) numberOfItemsPerRow
 {
-	if ( _layoutDirection == AQGridViewLayoutDirectionVertical )
-		return ( (NSUInteger)floorf(_boundsSize.width / _actualCellSize.width) );
-	
-	// work out how many rows we can fit
-	NSUInteger rows = (NSUInteger)floorf(_boundsSize.height / _actualCellSize.height);
-	NSUInteger cols = _numberOfItems / rows;
-	if ( _numberOfItems % rows != 0 )
-		cols++;
-	
-	return ( cols );	
+	return ( (NSUInteger)floorf(_boundsSize.width / _actualCellSize.width) );
+}
+
+- (NSUInteger)numberofItemsPerColumn {
+	return ( (NSUInteger)floorf(_boundsSize.height / _actualCellSize.height) );
 }
 
 - (CGRect) cellRectAtIndex: (NSUInteger) index
 {
-	NSUInteger numPerRow = [self numberOfItemsPerRow];
-    if ( numPerRow == 0 )       // avoid a divide-by-zero exception
-        return ( CGRectZero );
-	NSUInteger skipRows = index / numPerRow;
-	NSUInteger skipCols = index % numPerRow;
+	NSUInteger skipRows;
+	NSUInteger skipCols;
+	
+	if (_layoutDirection == AQGridViewLayoutDirectionVertical ) 
+	{
+		// Per row indexing
+		NSUInteger numPerRow = [self numberOfItemsPerRow];
+		if ( numPerRow == 0 )       // avoid a divide-by-zero exception
+			return ( CGRectZero );
+		skipRows = index / numPerRow;
+		skipCols = index % numPerRow;
+	} 
+	else 
+	{
+		// Per column indexing
+		NSUInteger numPerCol = [self numberofItemsPerColumn];
+		if ( numPerCol == 0 )       // avoid a divide-by-zero exception
+			return ( CGRectZero );
+		skipCols = index / numPerCol;
+		skipRows = index % numPerCol;
+	}
 	
 	CGRect result = CGRectZero;
 	result.origin.x = _actualCellSize.width * (CGFloat)skipCols + _leftPadding;
@@ -200,48 +229,105 @@
 
 - (NSIndexSet *) indicesOfCellsInRect: (CGRect) aRect
 {
-	NSMutableIndexSet * result = [NSMutableIndexSet indexSet];
-	NSUInteger numPerRow = [self numberOfItemsPerRow];
-	
-	for ( NSUInteger i = 0; i < _numberOfItems; i++ )
+	if (_layoutDirection == AQGridViewLayoutDirectionVertical ) 
 	{
-		CGRect cellRect = [self cellRectAtIndex: i];
+		// Per row indexing
+		NSMutableIndexSet * result = [NSMutableIndexSet indexSet];
+		NSUInteger numPerRow = [self numberOfItemsPerRow];
 		
-		if ( CGRectGetMaxY(cellRect) < CGRectGetMinY(aRect) )
+		for ( NSUInteger i = 0; i < _numberOfItems; i++ )
 		{
-			// jump forward to the next row
-			i += (numPerRow - 1);
-			continue;
-		}
-		
-		if ( CGRectIntersectsRect(cellRect, aRect) )
-		{
-			[result addIndex: i];
-			if ( (CGRectGetMaxY(cellRect) > CGRectGetMaxY(aRect)) &&
-				 (CGRectGetMaxX(cellRect) > CGRectGetMaxX(aRect)) )
+			CGRect cellRect = [self cellRectAtIndex: i];
+			
+			if ( CGRectGetMaxY(cellRect) < CGRectGetMinY(aRect) )
 			{
-				// passed the bottom-right edge of the given rect
-				break;
+				// jump forward to the next row
+				i += (numPerRow - 1);
+				continue;
+			}
+			
+			if ( CGRectIntersectsRect(cellRect, aRect) )
+			{
+				[result addIndex: i];
+				
+				// TODO: bug? correct: (CGRectGetMinY(cellRect) > CGRectGetMaxY(aRect)
+				if ( (CGRectGetMaxY(cellRect) > CGRectGetMaxY(aRect)) &&
+					(CGRectGetMaxX(cellRect) > CGRectGetMaxX(aRect)) )
+				{
+					// passed the bottom-right edge of the given rect
+					break;
+				}
 			}
 		}
+		
+		return ( result );
+	} 
+	else 
+	{
+		// Per column indexing
+		NSMutableIndexSet * result = [NSMutableIndexSet indexSet];
+		NSUInteger numPerCol = [self numberofItemsPerColumn];
+		
+		for ( NSUInteger i = 0; i < _numberOfItems; i++ ) 
+		{
+			CGRect cellRect = [self cellRectAtIndex:i];
+			
+			if ( CGRectGetMaxX(cellRect) < CGRectGetMinX(aRect) ) 
+			{
+				// jump forward to the next column
+				i += (numPerCol - 1);
+				continue;
+			}
+			
+			if ( CGRectIntersectsRect(cellRect, aRect) ) 
+			{
+				[result addIndex: i];
+				
+				// TODO: bug? correct: (CGRectGetMinX(cellRect) > CGRectGetMaxX(aRect)
+				if ( (CGRectGetMaxY(cellRect) > CGRectGetMaxY(aRect)) &&
+					(CGRectGetMaxX(cellRect) > CGRectGetMaxX(aRect)) )
+				{
+					// passed the bottom-right edge of the given rect
+					break;
+				}
+			}
+		}
+		
+		return ( result );
 	}
-	
-	return ( result );
 }
 
 @end
 
 @implementation AQGridViewData (AQGridViewDataPrivate)
 
-- (void) fixDesiredCellSizeForWidth: (CGFloat) width
-{
-    // Much thanks to Brandon Sneed (@bsneed) for the following new algorithm, reduced to two floating-point divisions -- that's O(1) folks!
-	CGFloat w = floorf(width - _leftPadding - _rightPadding);
-	CGFloat dw = floorf(_desiredCellSize.width);
-    CGFloat multiplier = floorf( w / dw );
+- (void)fixDesiredCellSize  {
 	
-	_actualCellSize.width = floorf( w / multiplier );
-	_actualCellSize.height = _desiredCellSize.height;
+	// Much thanks to Brandon Sneed (@bsneed) for the following new algorithm, 
+	// reduced to two floating-point divisions -- that's O(1) folks!
+	
+	if (_layoutDirection == AQGridViewLayoutDirectionVertical) 
+	{
+		// Vertical - Adjust cell width 
+		CGFloat width = _boundsSize.width;
+		CGFloat w = floorf(width - _leftPadding - _rightPadding);
+		CGFloat dw = floorf(_desiredCellSize.width);
+		CGFloat multiplier = floorf( w / dw );
+		
+		_actualCellSize.width = floorf( w / multiplier );
+		_actualCellSize.height = _desiredCellSize.height;
+	} 
+	else 
+	{
+		// Horizontal - Adjust cell height
+		CGFloat height = _boundsSize.height;
+		CGFloat h = floorf(height - _topPadding - _bottomPadding);
+		CGFloat dh = floorf(_desiredCellSize.height);
+		CGFloat multiplier = floorf( h / dh );
+	
+		_actualCellSize.width = _desiredCellSize.width;
+		_actualCellSize.height = floorf( h / multiplier );
+	}
 }
 
 @end

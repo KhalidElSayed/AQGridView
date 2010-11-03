@@ -60,6 +60,8 @@ enum
 	self.gridView.autoresizesSubviews = YES;
 	self.gridView.delegate = self;
 	self.gridView.dataSource = self;
+	
+	//self.gridView.layoutDirection = AQGridViewLayoutDirectionHorizontal;
     
     ImageDemoCellChooser * chooser = [[ImageDemoCellChooser alloc] initWithItemTitles: [NSArray arrayWithObjects: NSLocalizedString(@"Plain", @""), NSLocalizedString(@"Filled", @""), nil]];
     chooser.delegate = self;
@@ -191,10 +193,7 @@ enum
 	}
 	
 	// force the grid view to reflow
-	CGRect bounds = CGRectZero;
-	bounds.size = _gridView.frame.size;
-	_gridView.bounds = bounds;
-	[_gridView setNeedsLayout];
+	[_gridView reloadData];
 }
 
 - (void) cellChooser: (ImageDemoCellChooser *) chooser selectedItemAtIndex: (NSUInteger) index
@@ -255,7 +254,7 @@ enum
             }
             
             plainCell.image = [UIImage imageNamed: [_imageNames objectAtIndex: index]];
-            
+			
             cell = plainCell;
             break;
         }
