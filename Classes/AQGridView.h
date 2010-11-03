@@ -107,6 +107,8 @@ extern NSString * const AQGridViewSelectionDidChangeNotification;
 	UIView *						_touchedContentView;		// weak reference
 	
 	UIView *						_backgroundView;
+	CGFloat							_backgroundViewOverflow;
+	BOOL							_backgroundViewIsPadded;
 	UIColor *						_separatorColor;
 	
 	NSInteger						_reloadingSuspendedCount;
@@ -214,6 +216,8 @@ extern NSString * const AQGridViewSelectionDidChangeNotification;
 @property (nonatomic, assign) BOOL clipsContentWidthToBounds __attribute__((deprecated));	// default is YES. If you want to enable horizontal scrolling, set this to NO.
 
 @property (nonatomic, retain) UIView * backgroundView;		// specifies a view to place behind the cells
+@property (nonatomic) CGFloat backgroundViewOverflow;
+@property (nonatomic) BOOL backgroundViewIsPadded;
 @property (nonatomic) BOOL usesPagedHorizontalScrolling;	// default is NO, and scrolls verticalls only. Set to YES to have horizontal-only scrolling by page.
 
 @property (nonatomic) AQGridViewCellSeparatorStyle separatorStyle;	// default is AQGridViewCellSeparatorStyleEmptySpace

@@ -74,6 +74,7 @@ NSString * const AQGridViewSelectionDidChangeNotification = @"AQGridViewSelectio
 @implementation AQGridView
 
 @synthesize dataSource=_dataSource, backgroundView=_backgroundView, separatorColor=_separatorColor, animatingCells=_animatingCells, animatingIndices=_animatingIndices;
+@synthesize backgroundViewOverflow = _backgroundViewOverflow, backgroundViewIsPadded = _backgroundViewIsPadded;
 
 - (void) _sharedGridViewInit
 {
@@ -103,6 +104,9 @@ NSString * const AQGridViewSelectionDidChangeNotification = @"AQGridViewSelectio
 	_flags.allowsSelection = 1;
 	_flags.usesPagedHorizontalScrolling = NO;
 	_flags.contentSizeFillsBounds = 1;
+	
+	_backgroundViewOverflow = 0.0;
+	_backgroundViewIsPadded = NO;
 }
 
 - (id)initWithFrame: (CGRect) frame
@@ -641,10 +645,24 @@ NSString * const AQGridViewSelectionDidChangeNotification = @"AQGridViewSelectio
 	}
 	
 	CGRect rect = CGRectZero;
-	rect.size.width = self.contentSize.width - (_gridData.leftPadding + _gridData.rightPadding);
-	rect.size.height = self.contentSize.height -  (_gridData.topPadding + _gridData.bottomPadding);
-	rect.origin.x += _gridData.leftPadding;
-	rect.origin.y += _gridData.topPadding;
+	rect.size.width = self.contentSize.width;
+	rect.size.height = self.contentSize.height;
+	if (_backgroundViewOverflow > 0) {
+		// Add the overflow
+		if (_gridData.layoutDirection == AQGridViewLayoutDirectionVertical) {
+			rect.origin.y -= _backgroundViewOverflow;
+			rect.size.height += _backgroundViewOverflow*2;
+		} else {
+			rect.origin.x -= _backgroundViewOverflow;
+			rect.size.width += _backgroundViewOverflow*2;
+		}
+	} else if (_backgroundViewIsPadded) {
+		rect.origin.x += _gridData.leftPadding;
+		rect.origin.y += _gridData.topPadding;
+		rect.size.width -= (_gridData.leftPadding + _gridData.rightPadding);
+		rect.size.height -= (_gridData.topPadding + _gridData.bottomPadding);
+	}
+	
 	self.backgroundView.frame = rect;
 	
 	if ( _headerView != nil )
