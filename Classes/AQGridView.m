@@ -57,6 +57,7 @@ NSString * const AQGridViewSelectionDidChangeNotification = @"AQGridViewSelectio
 @end
 
 @interface AQGridView (AQCellLayout)
+- (void) sortVisibleCellList;
 - (void) layoutCellsInVisibleCellRange: (NSRange) range;
 - (void) layoutAllCells;
 - (CGRect) fixCellFrame: (CGRect) cellFrame forGridRect: (CGRect) gridRect;
@@ -836,6 +837,7 @@ NSString * const AQGridViewSelectionDidChangeNotification = @"AQGridViewSelectio
 	[_visibleCells removeObjectsInArray: newVisibleCells];
 	[_visibleCells makeObjectsPerformSelector: @selector(removeFromSuperview)];
 	[_visibleCells setArray: newVisibleCells];
+	[self sortVisibleCellList];
 	[newVisibleCells release];
 	self.animatingCells = nil;
 	
