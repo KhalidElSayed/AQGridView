@@ -1607,7 +1607,7 @@ passToSuper:
 					[visibleSet addIndex: cell.displayIndex];
 				}
 				
-				NSMutableIndexSet * missingSet = [newVisibleIndices mutableCopy];
+				NSMutableIndexSet * missingSet = [[newVisibleIndices mutableCopy] autorelease];
 				[missingSet removeIndexes: visibleSet];
 				[visibleSet release];
 				
